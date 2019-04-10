@@ -1,5 +1,6 @@
 CFLAGS = -g -Wall
 
+all: gttest
 gttest: gthr.o gtswtch.o main.o
 	$(CC) -o $@ $^
 
