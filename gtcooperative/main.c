@@ -1,6 +1,8 @@
 // See https://c9sharedId.me/articles/gthreads/code0.html
 
 #include "gthr.h"
+#include <signal.h>
+
 int sharedId=0;		/* this variable is shared */
 
 void f(void) {
@@ -33,6 +35,8 @@ void g(void) {
 }
 
 int main(void) {
+
+  signal(SIGINT,printIds);
   gtinit();	
   gtgo(f);
   gtgo(f);

@@ -59,7 +59,7 @@ bool gtyield(void) {
 
   // gtswtch never "returns" in the same thread
   gtswtch(old, new);
-      printIds();
+     // printIds();
   return true;
 }
 
@@ -112,6 +112,8 @@ void printIds()
 
   }
   printf("\n");
+  exit(EXIT_SUCCESS);
+
 }
 
 int uninterruptibleNanoSleep(time_t sec, long nanosec) {
