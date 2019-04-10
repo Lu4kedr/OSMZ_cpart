@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <time.h>
 
+extern int sharedId;
 // MaxGThreads gives number of threads available, currently fixed to 5
 // StackSize constant gives the size of a thread stack, currently fixed to 4Mb
 enum {
@@ -33,13 +34,14 @@ struct gt {
     Ready,		// Describes a valid thread whose execution is currently suspended
   }
   st;
+  uint64_t id;
 };
 
 // All the thread structures we will use will be stored in the gttbl array.
 struct gt gttbl[MaxGThreads];
 // Pointer points to the thread being currently executed.
 struct gt * gtcur;
-
+void printIds();
 void gtinit(void);
 void gtret(int ret);
 void gtswtch(struct gtctx * old, struct gtctx * new);

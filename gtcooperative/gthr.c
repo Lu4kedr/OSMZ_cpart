@@ -5,6 +5,7 @@
 void gtinit(void) {
   gtcur = & gttbl[0];
   gtcur -> st = Running;
+  gtcur ->id = sharedId;
 }
 
 // User request to stop the current thread
@@ -45,6 +46,7 @@ bool gtyield(void) {
   gtcur = p;
   // gtswtch never "returns" in the same thread
   gtswtch(old, new);
+      printIds();
   return true;
 }
 
@@ -62,13 +64,16 @@ int gtgo(void( * f)(void)) {
     if (p == & gttbl[MaxGThreads])
       return -1;
     else if (p -> st == Unused)
-    break;
-
+    {
+      // p ->id = sharedId++;
+      break;
+    }
   // Create and setup a private stack for the new thread.
   stack = malloc(StackSize);
   if (!stack)
     return -1;
-
+  printf("stack ok\n");
+  
   // Setup the execution context of the new thread and mark it as ready to run.
   // If f returns we make the CPU return into gtstop.
   *(uint64_t * ) & stack[StackSize - 8] = (uint64_t) gtstop;
@@ -76,8 +81,19 @@ int gtgo(void( * f)(void)) {
   *(uint64_t * ) & stack[StackSize - 16] = (uint64_t) f;
   p -> ctx.rsp = (uint64_t) & stack[StackSize - 16];
   p -> st = Ready;
-
+  p ->id = ++sharedId;
   return 0;
+}
+
+void printIds()
+{
+  struct gt * p;
+  for (int i=0;i<=MaxGThreads; i++)
+  {
+    p = & gttbl[i];
+    printf("G Thread id = %ld , state = %d \n", p->id, p->st);
+
+  }
 }
 
 int uninterruptibleNanoSleep(time_t sec, long nanosec) {

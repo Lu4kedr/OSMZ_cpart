@@ -1,32 +1,32 @@
-// See https://c9x.me/articles/gthreads/code0.html
+// See https://c9sharedId.me/articles/gthreads/code0.html
 
 #include "gthr.h"
+int sharedId=0;		/* this variable is shared */
 
 void f(void) {
-  static int x;		/* this variable is shared */
-  int i, id;
+ // int i, id;
 
-  id = ++x;
+  //id = ++sharedId;
   while (true) {
 
-    printf("F Thread id = %d, val = %d BEGINNING\n", id, ++i);
+  //  printf("F Thread id = %d, val = %d BEGINNING\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
-    printf("F Thread id = %d, val = %d END\n", id, ++i);
+//  printf("F Thread id = %d, val = %d END\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
     gtyield();		/* yield CPU to another thread */
   }
 }
 
 void g(void) {
-  static int x;		/* this variable is shared */
-  int i, id;
+ // static int sharedId;		/* this variable is shared */
+ // int i, id;
 
-  id = ++x;
+  //id = ++sharedId;
   while (true) {
 
-    printf("G Thread id = %d, val = %d BEGINNING\n", id, ++i);
+   // printf("G Thread id = %d, val = %d BEGINNING\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
-    printf("G Thread id = %d, val = %d END\n", id, ++i);
+  //  printf("G Thread id = %d, val = %d END\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
     gtyield();		/* yield CPU to another thread */
   }
