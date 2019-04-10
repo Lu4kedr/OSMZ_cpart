@@ -104,10 +104,11 @@ void printIds()
 {
   //return;
   struct gt * p;
+  printf("Thread ID | Running time [ms]\n");
   for (int i=0;i<MaxGThreads; i++)
   {
     p = & gttbl[i];
-    printf("G Thread id = %ld , time[ms] = %f \n", p->id,p->totalRunningTime);
+    printf("    %ld        %f \n", p->id,p->totalRunningTime);
 
   }
   printf("\n");
