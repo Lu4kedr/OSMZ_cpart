@@ -1,5 +1,6 @@
 #include "gthr.h"
 
+
 // Allocate the thread 0 and mark it as running
 // A bootstrap thread
 void gtinit(void) {
@@ -26,8 +27,19 @@ void __attribute__((noreturn)) gtret(int ret) {
 bool gtyield(void) {
   struct gt * p;
   struct gtctx * old, * new;
-
+  
   p = gtcur;
+  struct timespec act;
+   clock_gettime(CLOCK_REALTIME, &act); 
+   long nanoDiff =  (act.tv_nsec - p->executionStartTime.tv_nsec);
+
+   if(nanoDiff>0)
+   {
+      p ->totalRunningTime += (double)(nanoDiff/MEGA);
+   }
+
+
+
   // Find a new thread to run.
   while (p -> st != Ready) {
     if (++p == & gttbl[MaxGThreads])
@@ -44,6 +56,7 @@ bool gtyield(void) {
   old = & gtcur -> ctx;
   new = & p -> ctx;
   gtcur = p;
+
   // gtswtch never "returns" in the same thread
   gtswtch(old, new);
       printIds();
@@ -65,15 +78,14 @@ int gtgo(void( * f)(void)) {
       return -1;
     else if (p -> st == Unused)
     {
-      // p ->id = sharedId++;
       break;
     }
   // Create and setup a private stack for the new thread.
   stack = malloc(StackSize);
   if (!stack)
     return -1;
-  printf("stack ok\n");
-  
+  //printf("stack ok\n");
+
   // Setup the execution context of the new thread and mark it as ready to run.
   // If f returns we make the CPU return into gtstop.
   *(uint64_t * ) & stack[StackSize - 8] = (uint64_t) gtstop;
@@ -81,19 +93,24 @@ int gtgo(void( * f)(void)) {
   *(uint64_t * ) & stack[StackSize - 16] = (uint64_t) f;
   p -> ctx.rsp = (uint64_t) & stack[StackSize - 16];
   p -> st = Ready;
-  p ->id = ++sharedId;
+
+  p -> id = ++sharedId;
+  clock_gettime(CLOCK_REALTIME, &p->executionStartTime); 
+
   return 0;
 }
 
 void printIds()
 {
+  //return;
   struct gt * p;
-  for (int i=0;i<=MaxGThreads; i++)
+  for (int i=0;i<MaxGThreads; i++)
   {
     p = & gttbl[i];
-    printf("G Thread id = %ld , state = %d \n", p->id, p->st);
+    printf("G Thread id = %ld , time[ms] = %f \n", p->id,p->totalRunningTime);
 
   }
+  printf("\n");
 }
 
 int uninterruptibleNanoSleep(time_t sec, long nanosec) {

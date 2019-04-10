@@ -7,8 +7,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
-
+#include <sys/time.h>
+#include <sys/resource.h> 
+#define MEGA 10e6
 extern int sharedId;
+
+
 // MaxGThreads gives number of threads available, currently fixed to 5
 // StackSize constant gives the size of a thread stack, currently fixed to 4Mb
 enum {
@@ -35,6 +39,9 @@ struct gt {
   }
   st;
   uint64_t id;
+  struct timespec executionStartTime;
+  double totalRunningTime;
+
 };
 
 // All the thread structures we will use will be stored in the gttbl array.
