@@ -4,9 +4,16 @@
 // Allocate the thread 0 and mark it as running
 // A bootstrap thread
 void gtinit(void) {
+   struct timespec act;
+   clock_gettime(CLOCK_REALTIME, &act); 
+
   gtcur = & gttbl[0];
   gtcur -> st = Running;
-  gtcur ->id = sharedId;
+  gtcur -> id = sharedId;
+  gtcur -> priority = HIGH;
+  gtcur -> priority = HIGH;
+  
+  gtcur -> waitingTime.tv_nsec=act.tv_nsec;
 }
 
 // User request to stop the current thread
@@ -25,12 +32,12 @@ void __attribute__((noreturn)) gtret(int ret) {
 }
 
 bool gtyield(void) {
-  struct gt * p;
+  struct gt * p, *rtn;
   struct gtctx * old, * new;
-  
+  rtn=NULL;
   p = gtcur;
   struct timespec act;
-   clock_gettime(CLOCK_REALTIME, &act); 
+   clock_gettime(CLOCK_REALTIME, &act); //TODO REMAKE clock
    long nanoDiff =  (act.tv_nsec - p->executionStartTime.tv_nsec);
 
    if(nanoDiff>0)
@@ -38,15 +45,60 @@ bool gtyield(void) {
       p ->totalRunningTime += (double)(nanoDiff/MEGA);
    }
 
+// TODO case switch
+// TODO treshold reset on set st ready
 
-
-  // Find a new thread to run.
-  while (p -> st != Ready) {
-    if (++p == & gttbl[MaxGThreads])
-      p = & gttbl[0];
-    if (p == gtcur)
-      return false;
+// check priorities
+int tmp=-1;
+for (++p;; p++)
+{
+  if (p == & gttbl[MaxGThreads]) break;
+  if(p->priority<HIGH && (act.tv_nsec-p->waitingTime.tv_nsec)>TRESHOLD)
+  {
+    rtn=p;
+    tmp++;
+    break;
   }
+  if(p-> st == Ready && p-> priority==HIGH)
+  {
+    rtn=p;
+    tmp++;
+  }
+
+}
+if(tmp<0) //in previous cycle not found any rady or time tresholded thread- loop over MID
+{
+  for (p= & gttbl[0];; p++)
+  {
+    if (p == & gttbl[MaxGThreads]) break;
+    if(p-> st== Ready && p-> priority==MED)
+    {
+      tmp++;
+      break;
+    }
+  }
+}
+if(tmp<0) // still nothing -> LOW
+{
+  for (p= & gttbl[0];; p++)
+  {
+    if (p == & gttbl[MaxGThreads]) return false;
+    if(p-> st== Ready && p-> priority==LOW)
+    {
+      break;
+    }
+  }
+}
+if(rtn ==NULL) return false;
+//TODO
+
+  // // Find a new thread to run.
+  // while (p -> st != Ready) {
+  //   if (++p == & gttbl[MaxGThreads])
+  //     p = & gttbl[0];
+  //   if (p == gtcur)
+  //     return false;
+  // }
 
   // Switch from the current thread to this new one
   if (gtcur -> st != Unused)
@@ -54,8 +106,15 @@ bool gtyield(void) {
   p -> st = Running;
   // If a target thread is found, we store a pointer to its execution context in new and we store a pointer to ours in old.
   old = & gtcur -> ctx;
-  new = & p -> ctx;
-  gtcur = p;
+  if(rtn !=NULL)
+  {
+    p=rtn;
+  }
+
+    new = & p -> ctx;
+    gtcur = p;
+  
+
 
   // gtswtch never "returns" in the same thread
   gtswtch(old, new);
@@ -68,7 +127,7 @@ void gtstop(void) {
 }
 
 // Static helper will be useful to create new threads
-int gtgo(void( * f)(void)) {
+int gtgo(void( * f)(void),enum priority_t priority) {
   char * stack;
   struct gt * p;
 
@@ -91,11 +150,14 @@ int gtgo(void( * f)(void)) {
   *(uint64_t * ) & stack[StackSize - 8] = (uint64_t) gtstop;
   // Push the address of f on top of the stack — this way it will be used as return address for gtswtch
   *(uint64_t * ) & stack[StackSize - 16] = (uint64_t) f;
+
+  clock_gettime(CLOCK_REALTIME, &p->executionStartTime); 
+
   p -> ctx.rsp = (uint64_t) & stack[StackSize - 16];
   p -> st = Ready;
+  p ->priority=priority;
 
   p -> id = ++sharedId;
-  clock_gettime(CLOCK_REALTIME, &p->executionStartTime); 
 
   return 0;
 }

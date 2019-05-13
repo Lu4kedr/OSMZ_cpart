@@ -26,7 +26,7 @@ void g(void) {
   //id = ++sharedId;
   while (true) {
 
-   // printf("G Thread id = %d, val = %d BEGINNING\n", id, ++i);
+  //  printf("G Thread id = %d, val = %d BEGINNING\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
   //  printf("G Thread id = %d, val = %d END\n", id, ++i);
     uninterruptibleNanoSleep(0, 50000000);
@@ -38,9 +38,9 @@ int main(void) {
 
   signal(SIGINT,printIds);
   gtinit();	
-  gtgo(f);
-  gtgo(f);
-  gtgo(g);
-  gtgo(g);
+  gtgo(f,HIGH);
+  gtgo(f,HIGH);
+  gtgo(g,HIGH);
+  gtgo(g,HIGH);
   gtret(1);		/* wait for all threads and return 1 */
 }

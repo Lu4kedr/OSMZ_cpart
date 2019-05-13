@@ -11,14 +11,21 @@
 #include <sys/resource.h> 
 
 #define MEGA 10e6
+#define TRESHOLD 5e9
 extern int sharedId;
 
 
+enum priority_t {
+    HIGH=3,	
+    MED=2,	
+    LOW=1		
+};
 // MaxGThreads gives number of threads available, currently fixed to 5
 // StackSize constant gives the size of a thread stack, currently fixed to 4Mb
 enum {
   MaxGThreads = 5,
   StackSize = 0x400000,
+
 };
 
 // Structure captures a CPU state 
@@ -41,9 +48,12 @@ struct gt {
   st;
   uint64_t id;
   struct timespec executionStartTime;
+  struct timespec waitingTime;
   double totalRunningTime;
+  enum priority_t priority;
 
 };
+
 
 // All the thread structures we will use will be stored in the gttbl array.
 struct gt gttbl[MaxGThreads];
@@ -55,5 +65,5 @@ void gtret(int ret);
 void gtswtch(struct gtctx * old, struct gtctx * new);
 bool gtyield(void);
 void gtstop(void);
-int gtgo(void( * f)(void));
+int gtgo(void( * f)(void), enum priority_t priority);
 int uninterruptibleNanoSleep(time_t sec, long nanosec);
